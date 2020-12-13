@@ -28,9 +28,13 @@ class RecipeEditActivity : AppCompatActivity() {
 
         if (mBundle != null){
             pos = mBundle.getInt("position")
-            recipeImage.setImageResource(AllRecipes.list[pos].recipeImage)
-            recipeEditTitle.text = AllRecipes.list[pos].recipeName
-            recipeDescription.setText(AllRecipes.list[pos].recipeDetailDescription)
+            val recipe = AllRecipes.list[pos]
+            recipeImage.setImageResource(
+                this.resources.getIdentifier(recipe.recipeImage,
+                    "drawable",this.packageName)
+            )
+            recipeEditTitle.text = recipe.recipeName
+            recipeDescription.setText(recipe.recipeDetailDescription)
         }
 
         recipeDescription.setMovementMethod(ScrollingMovementMethod())

@@ -19,21 +19,25 @@ class RecipeDetailActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_recipe_detail)
 
-        val actionBar = supportActionBar
-        actionBar!!.title = "Recipe Detail"
-        actionBar.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.apply {
+            title = getString(R.string.recipe_detail)
+            setDisplayHomeAsUpEnabled(true)
+        }
 
         recipeDescription = recipeDetailDescription
         recipeImage = recipeDetailImage
 
-        var mBundle : Bundle? = intent.extras
-
-        if (mBundle != null){
-            pos = mBundle.getInt("position")
-            recipeImage.setImageResource(AllRecipes.list[pos].recipeImage)
-            recipeDetailTitle.text = AllRecipes.list[pos].recipeName
-            recipeDescription.text = AllRecipes.list[pos].recipeDetailDescription
+        intent.extras?.let{
+            pos = it.getInt("position")
+            val recipe = AllRecipes.list[pos]
+            recipeImage.setImageResource(
+                this.resources.getIdentifier(recipe.recipeImage,
+                    "drawable",this.packageName)
+            )
+            recipeDetailTitle.text = recipe.recipeName
+            recipeDescription.text = recipe.recipeDetailDescription
         }
+
         recipeDescription.setMovementMethod(ScrollingMovementMethod())
     }
 
@@ -49,7 +53,11 @@ class RecipeDetailActivity : AppCompatActivity() {
 
     fun editRecipeDescription(view: View) {
         var intent = Intent(this, RecipeEditActivity::class.java)
-        intent.putExtra("position", pos)
+        intent.putExtra(EXTRA_POSITION, pos)
         startActivity(intent)
+    }
+
+    companion object {
+        const val EXTRA_POSITION = "position"
     }
 }

@@ -3,17 +3,20 @@ package com.example.krogerrecipe
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
+import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.widget.ProgressBar
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.krogerrecipe.model.RecipeData
+import com.example.krogerrecipe.repository.Repository
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.*
-import kotlin.concurrent.schedule
 
 class MainActivity : AppCompatActivity() {
     private lateinit var recipesRecyclerView: RecyclerView
@@ -22,37 +25,53 @@ class MainActivity : AppCompatActivity() {
     private lateinit var toggle: ActionBarDrawerToggle
     private lateinit var recipeList: ArrayList<RecipeData>
     private lateinit var loadingIndicator: ProgressBar
+    private lateinit var viewModel: MainViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val repository = Repository()
+        val viewModelFactory = MainViewModelFactory(repository)
+        viewModel = ViewModelProvider(this, viewModelFactory).get(MainViewModel::class.java)
+        viewModel.getAllRecipes()
+        viewModel.myResponse.observe(this, androidx.lifecycle.Observer {
+                response ->
+            if(response.isSuccessful) {
+                response.body()?.forEach {
+                    AllRecipes.list += it
+                }
+                recipeList = AllRecipes.list as ArrayList<RecipeData>;
+
+                // set adapter
+                adapter = RecipeAdapter(this, recipeList)
+                recipesRecyclerView.setAdapter(adapter);
+
+                finishLoading()
+            }
+            else {
+                Log.i("Response", response.errorBody().toString())
+            }
+        })
+
         // initialize UI elements
         loadingIndicator = recipesLoadingIndicator
         recipesRecyclerView = allRecipesRecyclerView
 
-        // mimic the fetching data behavior
-        startLoading()
-        Timer().schedule(3000) {
-            runOnUiThread {
-                finishLoading()
-            }
-        }
-
         // set up layout manager for recycler view of recipes
         val orientation = resources.configuration.orientation
         val sw = resources.configuration.smallestScreenWidthDp
-        if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+        if(orientation == Configuration.ORIENTATION_PORTRAIT) {
             // In portrait
-            if (sw < 600) { // phone
+            if(sw < 600) { // phone
                 layoutManager = LinearLayoutManager(this)
             } else { // tablet
-                layoutManager = GridLayoutManager(this,2)
+                layoutManager = GridLayoutManager(this, 2)
             }
         } else {
             // In landscape
             if (sw < 600){ // phone
-                layoutManager = GridLayoutManager(this,2)
+                layoutManager = GridLayoutManager(this, 2)
             } else { // tablet
                 layoutManager = GridLayoutManager(this, 4)
             }
@@ -86,7 +105,7 @@ class MainActivity : AppCompatActivity() {
 
     fun startLoading(){
         // fetch recipe data list
-        recipeList = AllRecipes.list;
+        recipeList = AllRecipes.list as ArrayList<RecipeData>;
 
         // set adapter
         adapter = RecipeAdapter(this, recipeList)
